@@ -16,14 +16,14 @@ def get_link(url: str):
         'no_warnings': True,
         'extractor_args': {
             'youtube': {
-                'player_client': ['android', 'ios', 'web']
+                'player_client': ['android', 'web']
             }
         }
     }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = yt_dlp.YoutubeDL(ydl_opts).extract_info(url, download=False)
+            info = ydl.extract_info(url, download=False)
             title = info.get('title', 'Video')
             download_url = info.get('url')
 
