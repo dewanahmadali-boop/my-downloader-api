@@ -1,27 +1,27 @@
-from flask import Flask, request, jsonify
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
 import yt_dlp
 
-app = Flask(__name__)
+app = FastAPI()
 
-@app.route('/get-link', methods=['GET'])
-def get_link():
-    video_url = request.args.get('url')
-    if not video_url:
-        return jsonify({"status": "error", "message": "URL missing"}), 400
+@app.get("/get-link")
+def get_link(url: str):
+    if not url:
+        return JSONResponse(status_code=400, content={"status": "error", "message": "URL missing"})
 
     ydl_opts = {
         'format': 'best',
         'noplaylist': True,
+        'quiet': True,
     }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(video_url, download=False)
+            info = ydl.extract_info(url, download=False)
             title = info.get('title', 'Video')
-            download_url = info.get('url') # Direct stream url
+            download_url = info.get('url')
 
             if not download_url:
-                # Fallback to formats if direct url is missing
                 formats = info.get('formats', [])
                 for f in formats:
                     if f.get('url') and f.get('vcodec') != 'none':
@@ -29,16 +29,13 @@ def get_link():
                         break
 
             if download_url:
-                return jsonify({
+                return {
                     "status": "success",
                     "title": title,
                     "url": download_url
-                })
+                }
             else:
-                return jsonify({"status": "error", "message": "Link not found"}), 404
+                return JSONResponse(status_code=404, content={"status": "error", "message": "Link not found"})
 
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+        return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
