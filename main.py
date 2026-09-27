@@ -18,41 +18,24 @@ def get_link():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(video_url, download=False)
             title = info.get('title', 'Video')
-            formats_list = []
+            download_url = info.get('url') # Direct stream url
 
-            for f in info.get('formats', []):
-                # Filter useful video and audio streams
-                ext = f.get('ext')
-                vcodec = f.get('vcodec')
-                acodec = f.get('acodec')
-                
-                if ext == 'mp4' or (vcodec != 'none' and acodec != 'none'):
-                    resolution = f.get('format_note') or f.get('resolution') or 'Unknown'
-                    filesize = f.get('filesize') or f.get('filesize_approx') or 0
-                    
-                    # Convert bytes to MB
-                    size_mb = round(filesize / (1024 * 1024), 1) if filesize else 0.0
-                    size_str = f"~{size_mb} MB" if size_mb > 0 else "Size Unknown"
-                    
-                    download_url = f.get('url')
-                    if download_url and ('1080p' in str(resolution) or '720p' in str(resolution) or '480p' in str(resolution) or '360p' in str(resolution)):
-                        formats_list.append({
-                            "quality": f"{resolution} ({ext.upper()}) - {size_str}",
-                            "url": download_url
-                        })
+            if not download_url:
+                # Fallback to formats if direct url is missing
+                formats = info.get('formats', [])
+                for f in formats:
+                    if f.get('url') and f.get('vcodec') != 'none':
+                        download_url = f.get('url')
+                        break
 
-            # Fallback if specific formats aren't neatly tagged
-            if not formats_list and 'url' in info:
-                formats_list.append({
-                    "quality": "Default Quality",
-                    "url": info['url']
+            if download_url:
+                return jsonify({
+                    "status": "success",
+                    "title": title,
+                    "url": download_url
                 })
-
-            return jsonify({
-                "status": "success",
-                "title": title,
-                "formats": formats_list
-            })
+            else:
+                return jsonify({"status": "error", "message": "Link not found"}), 404
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
