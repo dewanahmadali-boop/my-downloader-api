@@ -9,7 +9,6 @@ def get_link(url: str):
     if not url:
         return JSONResponse(status_code=400, content={"status": "error", "message": "URL missing"})
 
-    # Enhanced options to bypass YouTube bot blocks & errors
     ydl_opts = {
         'format': 'best',
         'noplaylist': True,
@@ -17,17 +16,14 @@ def get_link(url: str):
         'no_warnings': True,
         'extractor_args': {
             'youtube': {
-                'player_client': ['android', 'web']
+                'player_client': ['android', 'ios', 'web']
             }
-        },
-        'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
     }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
+            info = yt_dlp.YoutubeDL(ydl_opts).extract_info(url, download=False)
             title = info.get('title', 'Video')
             download_url = info.get('url')
 
@@ -48,5 +44,4 @@ def get_link(url: str):
                 return JSONResponse(status_code=404, content={"status": "error", "message": "Link not found"})
 
     except Exception as e:
-        # Returns exact python error message for debugging instead of crashing
         return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
