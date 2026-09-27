@@ -9,10 +9,20 @@ def get_link(url: str):
     if not url:
         return JSONResponse(status_code=400, content={"status": "error", "message": "URL missing"})
 
+    # Enhanced options to bypass YouTube bot blocks & errors
     ydl_opts = {
         'format': 'best',
         'noplaylist': True,
         'quiet': True,
+        'no_warnings': True,
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'web']
+            }
+        },
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
     }
 
     try:
@@ -38,4 +48,5 @@ def get_link(url: str):
                 return JSONResponse(status_code=404, content={"status": "error", "message": "Link not found"})
 
     except Exception as e:
+        # Returns exact python error message for debugging instead of crashing
         return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
